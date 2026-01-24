@@ -1,6 +1,4 @@
 阮春決,NGUYỄN XUÂN QUYẾT
-張巍瀚,CHANG WEI HAN
-郭嶧林,KUO YI LIN
 阮德勇,NGUYỄN ĐỨC DŨNG
 阮志青,NGUYỄN CHÍ THANH
 黎越龍,LÊ VIỆT LONG
@@ -40,5 +38,6 @@
 潘友功,PHAN HỮU CÔNG
 武文源,VÕ VĂN NGUYÊN
 黎玉俊英,LÊ NGỌC TUẤN ANH
+
 
 
