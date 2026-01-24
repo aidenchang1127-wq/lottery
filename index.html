@@ -2,62 +2,52 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 尾牙大抽獎 - 整備課專用</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 尾牙大抽獎 - 終極強化版</title>
     <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; padding: 0; background-color: #000; color: #fff; font-family: "Microsoft JhengHei", sans-serif; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; background-color: #000; color: #fff; font-family: "Microsoft JhengHei", sans-serif; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; }
 
-        /* --- 輻射旋轉背景 (強制顯示版) --- */
-        #sunburst-overlay { 
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-            display: none; z-index: 1; pointer-events: none; 
-        }
-        #sunburst-core { 
-            position: absolute; top: 50%; left: 50%; width: 500vmax; height: 500vmax; 
-            transform: translate(-50%, -50%); 
-            background: conic-gradient(from 0deg, #ffd700 0deg 15deg, transparent 15deg 30deg); 
-            z-index: 2;
-            animation: rotateSun 15s linear infinite, flashSun 0.5s ease-in-out infinite alternate;
-        }
-        @keyframes rotateSun { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
-        @keyframes flashSun { from { opacity: 0.1; } to { opacity: 0.5; } }
+        /* --- 背景 Canvas 層 (旋轉金光) --- */
+        #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        #fire-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
 
-        /* 標題與狀態 */
-        #header-title { position: fixed; top: 30px; width: 100%; text-align: center; font-size: 32px; color: #ffd700; text-shadow: 0 0 15px rgba(255,215,0,0.8); z-index: 100; font-weight: bold; }
-        #status { position: fixed; top: 10px; right: 15px; color: #888; z-index: 100; font-size: 16px; }
+        /* 標題與剩餘人數 (加大) */
+        #header-title { position: fixed; top: 50px; width: 100%; text-align: center; font-size: 60px; color: #ffd700; text-shadow: 0 0 30px rgba(255,215,0,0.8); z-index: 100; font-weight: bold; }
+        #status { position: fixed; top: 20px; right: 30px; color: #aaa; z-index: 100; font-size: 28px; }
 
-        /* 三行顯示區塊 */
-        #display-box { text-align: center; z-index: 50; width: 100%; display: flex; flex-direction: column; gap: 10px; }
-        #name-id { font-size: 40px; color: #888; margin: 0; letter-spacing: 2px; } /* 工號 */
-        #name-ch { font-size: 100px; font-weight: bold; margin: 0; color: #fff; text-shadow: 2px 2px 10px #000; } /* 中文名 */
-        #name-vn { font-size: 55px; font-style: italic; color: #4da6ff; margin: 0; text-shadow: 2px 2px 10px #000; } /* 越文名 */
+        /* --- 中央顯示區 (大幅加大) --- */
+        #display-box { text-align: center; z-index: 50; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+        #name-id { font-size: 50px; color: #666; margin: 0; letter-spacing: 5px; } 
+        #name-ch { font-size: 180px; font-weight: bold; margin: 0; color: #fff; text-shadow: 5px 5px 20px #000; } 
+        #name-vn { font-size: 85px; font-style: italic; color: #4da6ff; margin: 0; text-shadow: 5px 5px 20px #000; } 
 
-        /* 頒獎層 */
-        #award-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 80; }
-        #award-msg { font-size: 70px; font-weight: bold; color: #ff3333; text-shadow: 0 0 20px #fff; text-align: center; line-height: 1.3; }
+        /* --- 頒獎層 (文字大幅加大) --- */
+        #award-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 80; background: rgba(0,0,0,0.4); }
+        #award-msg { font-size: 150px; font-weight: bold; color: #ff3333; text-shadow: 0 0 40px #fff, 0 0 70px #ff3333; text-align: center; line-height: 1.2; }
+        #award-vn { font-size: 80px; color: #ffd700; margin-top: 30px; }
 
-        #canvas-fire { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
-        .winning-zoom { animation: pulse 0.6s infinite; color: #ffd700 !important; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .winning-zoom { animation: pulse 0.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body onclick="activateSystem()">
 
-    <div id="sunburst-overlay"><div id="sunburst-core"></div></div>
-    <canvas id="canvas-fire"></canvas>
+    <canvas id="bg-canvas"></canvas>
+    <canvas id="fire-canvas"></canvas>
     
     <div id="status">剩餘人數: <span id="count">--</span></div>
     <div id="header-title">🎊 2026 YEAR-END PARTY 🎊</div>
 
     <div id="display-box">
-        <div id="name-id" style="color:#ffd700">READY</div>
+        <div id="name-id">READY</div>
         <div id="name-ch">點擊螢幕啟動</div>
         <div id="name-vn">Bấm để bắt đầu</div>
     </div>
 
     <div id="award-overlay">
-        <div id="award-msg">恭喜中獎！<br><span style="font-size: 40px; color: gold;">Chúc Mừng Trúng Giải!</span></div>
+        <div id="award-msg">恭喜中獎！</div>
+        <div id="award-vn">Chúc Mừng Trúng Giải!</div>
     </div>
 
     <audio id="snd-drum" src="drum.mp3" loop></audio>
@@ -65,7 +55,7 @@
     <audio id="snd-award"></audio>
 
 <script>
-    // 直接內置最新名單，防止本地讀取 txt 失敗
+    // 名單數據
     const rawData = `VNW0000434,阮春決,NGUYỄN XUÂN QUYẾT
 VNW0003475,阮德勇,NGUYỄN ĐỨC DŨNG
 VNW0004172,阮志青,NGUYỄN CHÍ THANH
@@ -77,15 +67,15 @@ VNW0011643,段英俊,ĐOÀN ANH TUẤN
 VNW0008906,阮裴創,NGUYỄN BÙI SANG
 VNW0008929,阮文俠,NGUYỄN VĂN HIỆP
 VNW0009048,阮文數,NGUYỄN VĂN TOÁN
-VNW0009112,梅懷南,MAI HOÀI NAM
+VNW0009112,梅懷南,MAI HOÀİ NAM
 VNW0009713,張功定,TRƯƠNG CÔNG ĐỊNH
 VNW0009901,阮友當,NGUYỄN HỮU ĐANG
-VNW0010878,黎文三,LÊ VĂV TAM
+VNW0010878,黎文三,LÊ VĂN TAM
 VNW0011023,阮文山,NGUYỄN VĂN SƠN
 VNW0011044,胡文明,HỒ VĂN MINH
 VNW0011353,黎文頓,LÊ VĂN ĐỐN
 VNW0011363,陳世龍,TRẦN THẾ LỘNG
-VNW0011846,段文龍,ĐOÀN VAV LONG
+VNW0011846,段文龍,ĐOÀN VĂN LONG
 VNW0012529,黎文芳,LÊ VĂN PHƯƠNG
 VNW0012530,阮嘉陽,NGUYỄN GIA DƯƠNG
 VNW0012532,張光雄,TRƯƠNG QUANG HÙNG
@@ -107,21 +97,43 @@ VNW0016915,潘友功,PHAN HỮU CÔNG
 VNW0019196,武文源,VÕ VĂN NGUYÊN
 VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
 
-    let list = JSON.parse(localStorage.getItem('lotteryList')) || rawData.split('\n').map(line => line.trim());
-    let isRolling = false, activated = false, lastIdx = -1, isFire = false;
+    let list = JSON.parse(localStorage.getItem('lotteryList')) || rawData.split('\n').map(l => l.trim());
+    let isRolling = false, activated = false, lastIdx = -1, isAwardEffect = false, isFire = false;
     const awards = ['award1.mp3', 'award2.mp3', 'award3.mp3'];
 
     const idEl = document.getElementById('name-id'), chEl = document.getElementById('name-ch'), vnEl = document.getElementById('name-vn');
-    const cntEl = document.getElementById('count'), awardUI = document.getElementById('award-overlay'), sun = document.getElementById('sunburst-overlay');
+    const cntEl = document.getElementById('count'), awardUI = document.getElementById('award-overlay'), box = document.getElementById('display-box');
+
+    // --- 旋轉光畫布邏輯 ---
+    const bgCanv = document.getElementById('bg-canvas'), bgCtx = bgCanv.getContext('2d');
+    let rotation = 0;
+    function resize() { bgCanv.width = window.innerWidth; bgCanv.height = window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
+
+    function drawSunburst() {
+        if (!isAwardEffect) { bgCtx.clearRect(0, 0, bgCanv.width, bgCanv.height); return; }
+        bgCtx.save();
+        bgCtx.translate(bgCanv.width/2, bgCanv.height/2);
+        bgCtx.rotate(rotation);
+        const rays = 24;
+        const angle = (Math.PI * 2) / rays;
+        for (let i = 0; i < rays; i++) {
+            bgCtx.beginPath();
+            bgCtx.moveTo(0, 0);
+            bgCtx.arc(0, 0, Math.max(bgCanv.width, bgCanv.height) * 1.5, i * angle, i * angle + angle / 2);
+            bgCtx.closePath();
+            bgCtx.fillStyle = (i % 2 === 0) ? 'rgba(255, 215, 0, 0.3)' : 'transparent';
+            bgCtx.fill();
+        }
+        bgCtx.restore();
+        rotation += 0.01;
+    }
 
     function activateSystem() {
         if (!activated) {
             activated = true;
             cntEl.innerText = list.length;
-            idEl.innerText = "READY";
             chEl.innerText = "準備抽獎"; vnEl.innerText = "Sẵn sàng";
-            chEl.style.color = "#fff";
-            document.getElementById('snd-drum').play().then(() => document.getElementById('snd-drum').pause());
         }
     }
 
@@ -131,14 +143,12 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
         if (audAward.paused) {
             audAward.src = awards[Math.floor(Math.random() * awards.length)];
             audAward.play().catch(()=>{});
-            document.getElementById('display-box').style.visibility = 'hidden'; 
-            awardUI.style.display = 'flex'; 
-            sun.style.display = 'block'; 
+            isAwardEffect = true;
+            box.style.visibility = 'hidden'; awardUI.style.display = 'flex';
         } else {
             audAward.pause();
-            document.getElementById('display-box').style.visibility = 'visible'; 
-            awardUI.style.display = 'none'; 
-            sun.style.display = 'none';
+            isAwardEffect = false;
+            box.style.visibility = 'visible'; awardUI.style.display = 'none';
         }
     }
 
@@ -157,7 +167,7 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
             isRolling = false; clearInterval(timer);
             document.getElementById('snd-drum').pause();
             document.getElementById('snd-gong').play().catch(()=>{});
-            isFire = true; chEl.style.color = '#ffd700'; vnEl.style.color = '#ffd700';
+            isFire = true; chEl.style.color = '#ffd700'; vnEl.style.color = '#ffd700'; box.classList.add('winning-zoom');
             setTimeout(() => {
                 const [vid, vch] = list[lastIdx].split(',');
                 if (confirm(`🎉 恭喜中獎: ${vch} (${vid})\n是否移除？`)) {
@@ -165,34 +175,40 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
                     localStorage.setItem('lotteryList', JSON.stringify(list));
                     cntEl.innerText = list.length;
                     idEl.innerText = "NEXT"; chEl.innerText = "準備抽獎"; vnEl.innerText = "Sẵn sàng";
-                    chEl.style.color = "white"; isFire = false;
+                    chEl.style.color = "white"; isFire = false; box.classList.remove('winning-zoom');
                 }
             }, 800);
         }
     }
 
+    // --- 煙火畫布邏輯 ---
+    const fireCanv = document.getElementById('fire-canvas'), fireCtx = fireCanv.getContext('2d');
+    let parts = [];
+    fireCanv.width = window.innerWidth; fireCanv.height = window.innerHeight;
+    function drawFire() {
+        fireCtx.fillStyle = 'rgba(0,0,0,0.2)'; fireCtx.fillRect(0,0,fireCanv.width,fireCanv.height);
+        if (isFire && Math.random() < 0.05) {
+            const x = Math.random()*fireCanv.width, y = Math.random()*fireCanv.height*0.4, col = `hsl(${Math.random()*360},100%,60%)`;
+            for(let i=0; i<30; i++) parts.push({x,y,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15,a:1,col});
+        }
+        parts.forEach((p,i) => {
+            p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.a-=0.015;
+            if(p.a>0) { fireCtx.globalAlpha=p.a; fireCtx.beginPath(); fireCtx.arc(p.x,p.y,4,0,Math.PI*2); fireCtx.fillStyle=p.col; fireCtx.fill(); }
+            else parts.splice(i,1);
+        });
+    }
+
+    function mainLoop() {
+        drawSunburst();
+        drawFire();
+        requestAnimationFrame(mainLoop);
+    }
+    mainLoop();
+
     document.addEventListener('keydown', (e) => {
         if (e.code === 'Space') { e.preventDefault(); handleDraw(); }
         if (e.code === 'Enter') { e.preventDefault(); toggleAward(); }
     });
-
-    const canv = document.getElementById('canvas-fire'), ctx = canv.getContext('2d');
-    let parts = [];
-    canv.width = window.innerWidth; canv.height = window.innerHeight;
-    function anim() {
-        requestAnimationFrame(anim);
-        ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0,0,canv.width,canv.height);
-        if (isFire && Math.random() < 0.05) {
-            const x = Math.random()*canv.width, y = Math.random()*canv.height*0.4, col = `hsl(${Math.random()*360},100%,60%)`;
-            for(let i=0; i<30; i++) parts.push({x,y,vx:(Math.random()-0.5)*10,vy:(Math.random()-0.5)*10,a:1,col});
-        }
-        parts.forEach((p,i) => {
-            p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.a-=0.012;
-            if(p.a>0) { ctx.globalAlpha=p.a; ctx.beginPath(); ctx.arc(p.x,p.y,3,0,7); ctx.fillStyle=p.col; ctx.fill(); }
-            else parts.splice(i,1);
-        });
-    }
-    anim();
 </script>
 </body>
 </html>
