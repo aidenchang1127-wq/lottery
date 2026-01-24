@@ -3,29 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 尾牙大抽獎 - 終極強化版</title>
+    <title>2026 尾牙大抽獎 - 終極穩定版</title>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; background-color: #000; color: #fff; font-family: "Microsoft JhengHei", sans-serif; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; }
 
-        /* --- 背景 Canvas 層 (旋轉金光) --- */
-        #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        /* --- 旋轉金光：使用最穩定的 CSS 條紋繪製 --- */
+        #sunburst {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 500vmax;
+            height: 500vmax;
+            transform: translate(-50%, -50%);
+            /* 強制使用高亮金黃色條紋 */
+            background: repeating-conic-gradient(
+                #ffd700 0deg 15deg,
+                rgba(0,0,0,0) 15deg 30deg
+            );
+            z-index: 1;
+            opacity: 0; /* 預設隱藏 */
+            transition: opacity 0.5s;
+            pointer-events: none;
+            animation: rotateSun 15s linear infinite;
+        }
+
+        @keyframes rotateSun {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* 煙火層 */
         #fire-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
 
-        /* 標題與剩餘人數 (加大) */
-        #header-title { position: fixed; top: 50px; width: 100%; text-align: center; font-size: 60px; color: #ffd700; text-shadow: 0 0 30px rgba(255,215,0,0.8); z-index: 100; font-weight: bold; }
-        #status { position: fixed; top: 20px; right: 30px; color: #aaa; z-index: 100; font-size: 28px; }
+        /* 頂部標題與狀態 (加大) */
+        #header-title { position: fixed; top: 40px; width: 100%; text-align: center; font-size: 60px; color: #ffd700; text-shadow: 0 0 30px rgba(255,215,0,0.9); z-index: 100; font-weight: bold; }
+        #status { position: fixed; top: 20px; right: 30px; color: #888; z-index: 100; font-size: 30px; }
 
-        /* --- 中央顯示區 (大幅加大) --- */
-        #display-box { text-align: center; z-index: 50; width: 100%; display: flex; flex-direction: column; gap: 20px; }
-        #name-id { font-size: 50px; color: #666; margin: 0; letter-spacing: 5px; } 
-        #name-ch { font-size: 180px; font-weight: bold; margin: 0; color: #fff; text-shadow: 5px 5px 20px #000; } 
-        #name-vn { font-size: 85px; font-style: italic; color: #4da6ff; margin: 0; text-shadow: 5px 5px 20px #000; } 
+        /* --- 中央顯示區 (三行、巨型字) --- */
+        #display-box { text-align: center; z-index: 50; width: 100%; display: flex; flex-direction: column; gap: 10px; }
+        #name-id { font-size: 60px; color: #555; margin: 0; letter-spacing: 5px; } 
+        #name-ch { font-size: 220px; font-weight: bold; margin: 0; color: #fff; text-shadow: 5px 5px 20px #000; } 
+        #name-vn { font-size: 90px; font-style: italic; color: #4da6ff; margin: 0; text-shadow: 5px 5px 20px #000; } 
 
-        /* --- 頒獎層 (文字大幅加大) --- */
-        #award-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 80; background: rgba(0,0,0,0.4); }
-        #award-msg { font-size: 150px; font-weight: bold; color: #ff3333; text-shadow: 0 0 40px #fff, 0 0 70px #ff3333; text-align: center; line-height: 1.2; }
-        #award-vn { font-size: 80px; color: #ffd700; margin-top: 30px; }
+        /* --- 頒獎訊息層 (巨型字) --- */
+        #award-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 80; background: rgba(0,0,0,0.3);
+        }
+        #award-msg-main { font-size: 200px; font-weight: bold; color: #ff3333; text-shadow: 0 0 40px #fff, 0 0 80px #ff3333; margin: 0; }
+        #award-msg-sub { font-size: 90px; color: #ffd700; margin-top: 20px; font-weight: bold; }
 
         .winning-zoom { animation: pulse 0.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
@@ -33,10 +61,11 @@
 </head>
 <body onclick="activateSystem()">
 
-    <canvas id="bg-canvas"></canvas>
+    <div id="sunburst"></div>
+    
     <canvas id="fire-canvas"></canvas>
     
-    <div id="status">剩餘人數: <span id="count">--</span></div>
+    <div id="status">剩餘: <span id="count">--</span> 人</div>
     <div id="header-title">🎊 2026 YEAR-END PARTY 🎊</div>
 
     <div id="display-box">
@@ -46,8 +75,8 @@
     </div>
 
     <div id="award-overlay">
-        <div id="award-msg">恭喜中獎！</div>
-        <div id="award-vn">Chúc Mừng Trúng Giải!</div>
+        <p id="award-msg-main">恭喜中獎！</p>
+        <p id="award-msg-sub">Chúc Mừng Trúng Giải!</p>
     </div>
 
     <audio id="snd-drum" src="drum.mp3" loop></audio>
@@ -55,8 +84,8 @@
     <audio id="snd-award"></audio>
 
 <script>
-    // 名單數據
-    const rawData = `VNW0000434,阮春決,NGUYỄN XUÂN QUYẾT
+    // 100% 內建名單，避免讀取失敗
+    const listData = `VNW0000434,阮春決,NGUYỄN XUÂN QUYẾT
 VNW0003475,阮德勇,NGUYỄN ĐỨC DŨNG
 VNW0004172,阮志青,NGUYỄN CHÍ THANH
 VNW0004182,黎越龍,LÊ VIỆT LONG
@@ -97,37 +126,13 @@ VNW0016915,潘友功,PHAN HỮU CÔNG
 VNW0019196,武文源,VÕ VĂN NGUYÊN
 VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
 
-    let list = JSON.parse(localStorage.getItem('lotteryList')) || rawData.split('\n').map(l => l.trim());
-    let isRolling = false, activated = false, lastIdx = -1, isAwardEffect = false, isFire = false;
+    let list = JSON.parse(localStorage.getItem('lotteryList')) || listData.split('\n').map(l => l.trim());
+    let isRolling = false, activated = false, lastIdx = -1, isFire = false;
     const awards = ['award1.mp3', 'award2.mp3', 'award3.mp3', 'award4.mp3'];
 
     const idEl = document.getElementById('name-id'), chEl = document.getElementById('name-ch'), vnEl = document.getElementById('name-vn');
-    const cntEl = document.getElementById('count'), awardUI = document.getElementById('award-overlay'), box = document.getElementById('display-box');
-
-    // --- 旋轉光畫布邏輯 ---
-    const bgCanv = document.getElementById('bg-canvas'), bgCtx = bgCanv.getContext('2d');
-    let rotation = 0;
-    function resize() { bgCanv.width = window.innerWidth; bgCanv.height = window.innerHeight; }
-    window.addEventListener('resize', resize); resize();
-
-    function drawSunburst() {
-        if (!isAwardEffect) { bgCtx.clearRect(0, 0, bgCanv.width, bgCanv.height); return; }
-        bgCtx.save();
-        bgCtx.translate(bgCanv.width/2, bgCanv.height/2);
-        bgCtx.rotate(rotation);
-        const rays = 24;
-        const angle = (Math.PI * 2) / rays;
-        for (let i = 0; i < rays; i++) {
-            bgCtx.beginPath();
-            bgCtx.moveTo(0, 0);
-            bgCtx.arc(0, 0, Math.max(bgCanv.width, bgCanv.height) * 1.5, i * angle, i * angle + angle / 2);
-            bgCtx.closePath();
-            bgCtx.fillStyle = (i % 2 === 0) ? 'rgba(255, 215, 0, 0.3)' : 'transparent';
-            bgCtx.fill();
-        }
-        bgCtx.restore();
-        rotation += 0.01;
-    }
+    const cntEl = document.getElementById('count'), awardUI = document.getElementById('award-overlay'), sun = document.getElementById('sunburst');
+    const audDrum = document.getElementById('snd-drum'), audGong = document.getElementById('snd-gong'), audAward = document.getElementById('snd-award');
 
     function activateSystem() {
         if (!activated) {
@@ -137,26 +142,30 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
         }
     }
 
+    // 頒獎控制 (Enter)
     function toggleAward() {
         if (isRolling || !activated) return; 
-        const audAward = document.getElementById('snd-award');
         if (audAward.paused) {
             audAward.src = awards[Math.floor(Math.random() * awards.length)];
             audAward.play().catch(()=>{});
-            isAwardEffect = true;
-            box.style.visibility = 'hidden'; awardUI.style.display = 'flex';
+            awardUI.style.display = 'flex'; 
+            sun.style.opacity = '1'; // 顯示旋轉光
+            document.getElementById('display-box').style.visibility = 'hidden';
         } else {
             audAward.pause();
-            isAwardEffect = false;
-            box.style.visibility = 'visible'; awardUI.style.display = 'none';
+            awardUI.style.display = 'none'; 
+            sun.style.opacity = '0'; // 隱藏旋轉光
+            document.getElementById('display-box').style.visibility = 'visible';
         }
     }
 
+    // 抽獎執行 (Space)
     function handleDraw() {
         if (!activated || list.length === 0 || awardUI.style.display === 'flex') return;
         if (!isRolling) {
             isRolling = true; isFire = false;
-            document.getElementById('snd-drum').play().catch(()=>{});
+            document.getElementById('display-box').classList.remove('winning-zoom');
+            audDrum.currentTime = 0; audDrum.play().catch(()=>{});
             timer = setInterval(() => {
                 lastIdx = Math.floor(Math.random() * list.length);
                 const [vid, vch, vvn] = list[lastIdx].split(',');
@@ -165,45 +174,41 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
             }, 60);
         } else {
             isRolling = false; clearInterval(timer);
-            document.getElementById('snd-drum').pause();
-            document.getElementById('snd-gong').play().catch(()=>{});
-            isFire = true; chEl.style.color = '#ffd700'; vnEl.style.color = '#ffd700'; box.classList.add('winning-zoom');
+            audDrum.pause(); audGong.currentTime = 0; audGong.play().catch(()=>{});
+            isFire = true; chEl.style.color = '#ffd700'; vnEl.style.color = '#ffd700';
+            document.getElementById('display-box').classList.add('winning-zoom');
             setTimeout(() => {
                 const [vid, vch] = list[lastIdx].split(',');
                 if (confirm(`🎉 恭喜中獎: ${vch} (${vid})\n是否移除？`)) {
                     list.splice(lastIdx, 1);
                     localStorage.setItem('lotteryList', JSON.stringify(list));
                     cntEl.innerText = list.length;
-                    idEl.innerText = "NEXT"; chEl.innerText = "準備抽獎"; vnEl.innerText = "Sẵn sàng";
-                    chEl.style.color = "white"; isFire = false; box.classList.remove('winning-zoom');
+                    idEl.innerText = "READY"; chEl.innerText = "準備抽獎"; vnEl.innerText = "Sẵn sàng";
+                    chEl.style.color = "white"; isFire = false;
+                    document.getElementById('display-box').classList.remove('winning-zoom');
                 }
-            }, 800);
+            }, 1000);
         }
     }
 
-    // --- 煙火畫布邏輯 ---
-    const fireCanv = document.getElementById('fire-canvas'), fireCtx = fireCanv.getContext('2d');
+    // 煙火繪製
+    const canv = document.getElementById('fire-canvas'), ctx = canv.getContext('2d');
     let parts = [];
-    fireCanv.width = window.innerWidth; fireCanv.height = window.innerHeight;
-    function drawFire() {
-        fireCtx.fillStyle = 'rgba(0,0,0,0.2)'; fireCtx.fillRect(0,0,fireCanv.width,fireCanv.height);
+    canv.width = window.innerWidth; canv.height = window.innerHeight;
+    function anim() {
+        requestAnimationFrame(anim);
+        ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0,0,canv.width,canv.height);
         if (isFire && Math.random() < 0.05) {
-            const x = Math.random()*fireCanv.width, y = Math.random()*fireCanv.height*0.4, col = `hsl(${Math.random()*360},100%,60%)`;
+            const x = Math.random()*canv.width, y = Math.random()*canv.height*0.4, col = `hsl(${Math.random()*360},100%,60%)`;
             for(let i=0; i<30; i++) parts.push({x,y,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15,a:1,col});
         }
         parts.forEach((p,i) => {
             p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.a-=0.015;
-            if(p.a>0) { fireCtx.globalAlpha=p.a; fireCtx.beginPath(); fireCtx.arc(p.x,p.y,4,0,Math.PI*2); fireCtx.fillStyle=p.col; fireCtx.fill(); }
+            if(p.a>0) { ctx.globalAlpha=p.a; ctx.beginPath(); ctx.arc(p.x,p.y,5,0,Math.PI*2); ctx.fillStyle=p.col; ctx.fill(); }
             else parts.splice(i,1);
         });
     }
-
-    function mainLoop() {
-        drawSunburst();
-        drawFire();
-        requestAnimationFrame(mainLoop);
-    }
-    mainLoop();
+    anim();
 
     document.addEventListener('keydown', (e) => {
         if (e.code === 'Space') { e.preventDefault(); handleDraw(); }
@@ -212,4 +217,3 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
 </script>
 </body>
 </html>
-
