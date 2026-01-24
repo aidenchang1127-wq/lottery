@@ -3,52 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 尾牙大抽獎 - 頒獎連動版</title>
+    <title>2026 尾牙大抽獎 - 終極穩定版</title>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; background-color: #000; color: #fff; font-family: "Microsoft JhengHei", sans-serif; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; }
 
-        /* --- 旋轉金光：強制層級與動畫 --- */
+        /* --- 旋轉金光：使用最穩定的 CSS 條紋繪製 --- */
         #sunburst {
-            position: fixed; top: 50%; left: 50%; width: 600vmax; height: 600vmax;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 500vmax;
+            height: 500vmax;
             transform: translate(-50%, -50%);
+            /* 強制使用高亮金黃色條紋 */
             background: repeating-conic-gradient(
                 #ffd700 0deg 15deg,
                 rgba(0,0,0,0) 15deg 30deg
             );
-            z-index: 1; opacity: 0; transition: opacity 0.4s; pointer-events: none;
+            z-index: 1;
+            opacity: 0; /* 預設隱藏 */
+            transition: opacity 0.5s;
+            pointer-events: none;
             animation: rotateSun 15s linear infinite;
         }
-        @keyframes rotateSun { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        @keyframes rotateSun {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
 
         /* 煙火層 */
         #fire-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
 
-        /* 頂部標題與狀態 */
+        /* 頂部標題與狀態 (加大) */
         #header-title { position: fixed; top: 40px; width: 100%; text-align: center; font-size: 60px; color: #ffd700; text-shadow: 0 0 30px rgba(255,215,0,0.9); z-index: 100; font-weight: bold; }
         #status { position: fixed; top: 20px; right: 30px; color: #888; z-index: 100; font-size: 30px; }
 
-        /* --- 中央抽獎區 (三行) --- */
+        /* --- 中央顯示區 (三行、巨型字) --- */
         #display-box { text-align: center; z-index: 50; width: 100%; display: flex; flex-direction: column; gap: 10px; }
         #name-id { font-size: 60px; color: #555; margin: 0; letter-spacing: 5px; } 
         #name-ch { font-size: 220px; font-weight: bold; margin: 0; color: #fff; text-shadow: 5px 5px 20px #000; } 
         #name-vn { font-size: 90px; font-style: italic; color: #4da6ff; margin: 0; text-shadow: 5px 5px 20px #000; } 
 
-        /* --- 頒獎訊息層 (連動剛抽出的名單) --- */
+        /* --- 頒獎訊息層 (巨型字) --- */
         #award-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             display: none; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 80; background: rgba(0,0,0,0.2);
+            z-index: 80; background: rgba(0,0,0,0.3);
         }
-        /* 頒獎模式下的名單顯示 (超大) */
-        #award-winner-info { text-align: center; margin-bottom: 50px; animation: winnerShow 0.8s ease-out; }
-        #award-winner-ch { font-size: 240px; font-weight: bold; color: #fff; text-shadow: 0 0 50px #ffd700; margin: 0; }
-        #award-winner-vn { font-size: 100px; color: #4da6ff; font-style: italic; margin: 0; }
-        
-        #award-msg-main { font-size: 160px; font-weight: bold; color: #ff3333; text-shadow: 0 0 40px #fff; margin: 20px 0 0 0; }
-        #award-msg-sub { font-size: 80px; color: #ffd700; margin: 10px 0 0 0; font-weight: bold; }
+        #award-msg-main { font-size: 200px; font-weight: bold; color: #ff3333; text-shadow: 0 0 40px #fff, 0 0 80px #ff3333; margin: 0; }
+        #award-msg-sub { font-size: 90px; color: #ffd700; margin-top: 20px; font-weight: bold; }
 
-        @keyframes winnerShow { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
         .winning-zoom { animation: pulse 0.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
     </style>
@@ -56,6 +62,7 @@
 <body onclick="activateSystem()">
 
     <div id="sunburst"></div>
+    
     <canvas id="fire-canvas"></canvas>
     
     <div id="status">剩餘: <span id="count">--</span> 人</div>
@@ -68,10 +75,6 @@
     </div>
 
     <div id="award-overlay">
-        <div id="award-winner-info">
-            <p id="award-winner-ch"></p>
-            <p id="award-winner-vn"></p>
-        </div>
         <p id="award-msg-main">恭喜中獎！</p>
         <p id="award-msg-sub">Chúc Mừng Trúng Giải!</p>
     </div>
@@ -81,6 +84,7 @@
     <audio id="snd-award"></audio>
 
 <script>
+    // 100% 內建名單，避免讀取失敗
     const listData = `VNW0000434,阮春決,NGUYỄN XUÂN QUYẾT
 VNW0003475,阮德勇,NGUYỄN ĐỨC DŨNG
 VNW0004172,阮志青,NGUYỄN CHÍ THANH
@@ -128,7 +132,7 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
 
     const idEl = document.getElementById('name-id'), chEl = document.getElementById('name-ch'), vnEl = document.getElementById('name-vn');
     const cntEl = document.getElementById('count'), awardUI = document.getElementById('award-overlay'), sun = document.getElementById('sunburst');
-    const wCh = document.getElementById('award-winner-ch'), wVn = document.getElementById('award-winner-vn');
+    const audDrum = document.getElementById('snd-drum'), audGong = document.getElementById('snd-gong'), audAward = document.getElementById('snd-award');
 
     function activateSystem() {
         if (!activated) {
@@ -138,34 +142,30 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
         }
     }
 
+    // 頒獎控制 (Enter)
     function toggleAward() {
         if (isRolling || !activated) return; 
-        const audAward = document.getElementById('snd-award');
         if (audAward.paused) {
-            // 抓取當前顯示的名單填入頒獎層
-            wCh.innerText = chEl.innerText;
-            wVn.innerText = vnEl.innerText;
-            
             audAward.src = awards[Math.floor(Math.random() * awards.length)];
             audAward.play().catch(()=>{});
             awardUI.style.display = 'flex'; 
-            sun.style.opacity = '1';
+            sun.style.opacity = '1'; // 顯示旋轉光
             document.getElementById('display-box').style.visibility = 'hidden';
         } else {
             audAward.pause();
             awardUI.style.display = 'none'; 
-            sun.style.opacity = '0';
+            sun.style.opacity = '0'; // 隱藏旋轉光
             document.getElementById('display-box').style.visibility = 'visible';
         }
     }
 
+    // 抽獎執行 (Space)
     function handleDraw() {
         if (!activated || list.length === 0 || awardUI.style.display === 'flex') return;
         if (!isRolling) {
             isRolling = true; isFire = false;
             document.getElementById('display-box').classList.remove('winning-zoom');
-            document.getElementById('snd-drum').currentTime = 0;
-            document.getElementById('snd-drum').play().catch(()=>{});
+            audDrum.currentTime = 0; audDrum.play().catch(()=>{});
             timer = setInterval(() => {
                 lastIdx = Math.floor(Math.random() * list.length);
                 const [vid, vch, vvn] = list[lastIdx].split(',');
@@ -174,9 +174,7 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
             }, 60);
         } else {
             isRolling = false; clearInterval(timer);
-            document.getElementById('snd-drum').pause();
-            document.getElementById('snd-gong').currentTime = 0;
-            document.getElementById('snd-gong').play().catch(()=>{});
+            audDrum.pause(); audGong.currentTime = 0; audGong.play().catch(()=>{});
             isFire = true; chEl.style.color = '#ffd700'; vnEl.style.color = '#ffd700';
             document.getElementById('display-box').classList.add('winning-zoom');
             setTimeout(() => {
@@ -193,7 +191,7 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
         }
     }
 
-    // 煙火渲染
+    // 煙火繪製
     const canv = document.getElementById('fire-canvas'), ctx = canv.getContext('2d');
     let parts = [];
     canv.width = window.innerWidth; canv.height = window.innerHeight;
