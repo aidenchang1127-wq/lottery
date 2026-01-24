@@ -128,7 +128,7 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
 
     let list = JSON.parse(localStorage.getItem('lotteryList')) || listData.split('\n').map(l => l.trim());
     let isRolling = false, activated = false, lastIdx = -1, isFire = false;
-    const awards = ['award1.mp3', 'award2.mp3', 'award3.mp3'];
+    const awards = ['award1.mp3', 'award2.mp3', 'award3.mp3', 'award4.mp3'];
 
     const idEl = document.getElementById('name-id'), chEl = document.getElementById('name-ch'), vnEl = document.getElementById('name-vn');
     const cntEl = document.getElementById('count'), awardUI = document.getElementById('award-overlay'), sun = document.getElementById('sunburst');
@@ -217,3 +217,4 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
 </script>
 </body>
 </html>
+
