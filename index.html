@@ -3,20 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 尾牙大抽獎 - 整備課終極版</title>
+    <title>2026 尾牙大抽獎 - 整備課強化版</title>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; background-color: #000; color: #fff; font-family: "Microsoft JhengHei", sans-serif; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
 
-        /* --- 唯一特效畫布層 --- */
-        #fx-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+        /* --- 1. 背景金光放射層 (與圖片一致的放射效果) --- */
+        #sunburst-overlay {
+            position: fixed; top: 50%; left: 50%; width: 600vmax; height: 600vmax; 
+            transform: translate(-50%, -50%);
+            /* 10道強力放射金光 */
+            background: repeating-conic-gradient(
+                #ffd700 0deg 18deg, 
+                transparent 18deg 36deg
+            );
+            z-index: 1;
+            display: none; /* 預設關閉，頒獎音樂啟動後才開啟 */
+            animation: rotateSun 15s linear infinite;
+            filter: blur(2px); /* 增加一點發光感 */
+        }
+        @keyframes rotateSun { 
+            from { transform: translate(-50%, -50%) rotate(0deg); } 
+            to { transform: translate(-50%, -50%) rotate(360deg); } 
+        }
+
+        /* 畫布層：煙火專用 */
+        #fire-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
 
         /* 頂部標題與狀態 */
         #header-title { position: fixed; top: 40px; width: 100%; text-align: center; font-size: 55px; color: #ffd700; text-shadow: 0 0 20px rgba(255,215,0,0.8); z-index: 100; font-weight: bold; }
         #status { position: fixed; top: 20px; right: 30px; color: #888; z-index: 100; font-size: 24px; }
 
         /* 抽獎主顯示區 (三行) */
-        #display-box { text-align: center; z-index: 50; width: 100%; display: flex; flex-direction: column; gap: 15px; background: transparent; }
+        #display-box { text-align: center; z-index: 50; width: 100%; display: flex; flex-direction: column; gap: 15px; }
         #name-id { font-size: 45px; color: #666; letter-spacing: 5px; margin: 0; }
         #name-ch { font-size: 160px; font-weight: bold; margin: 0; color: #fff; text-shadow: 2px 2px 15px #000; }
         #name-vn { font-size: 85px; font-style: italic; color: #4da6ff; margin: 0; text-shadow: 2px 2px 15px #000; }
@@ -35,7 +54,9 @@
 </head>
 <body onclick="activateSystem()">
 
-    <canvas id="fx-canvas"></canvas>
+    <div id="sunburst-overlay"></div>
+    
+    <canvas id="fire-canvas"></canvas>
     
     <div id="status">剩餘人數: <span id="count">--</span></div>
     <div id="header-title">🎊 2026 YEAR-END PARTY 🎊</div>
@@ -55,7 +76,7 @@
     <audio id="snd-award"></audio>
 
 <script>
-    // 內建名單數據
+    // 內建人員名單 
     const rawData = `VNW0000434,阮春決,NGUYỄN XUÂN QUYẾT
 VNW0003475,阮德勇,NGUYỄN ĐỨC DŨNG
 VNW0004172,阮志青,NGUYỄN CHÍ THANH
@@ -67,7 +88,7 @@ VNW0011643,段英俊,ĐOÀN ANH TUẤN
 VNW0008906,阮裴創,NGUYỄN BÙI SANG
 VNW0008929,阮文俠,NGUYỄN VĂN HIỆP
 VNW0009048,阮文數,NGUYỄN VĂN TOÁN
-VNW0009112,梅懷南,MAI HOÀI NAM
+VNW0009112,梅懷南,MAI HOÀİ NAM
 VNW0009713,張功定,TRƯƠNG CÔNG ĐỊNH
 VNW0009901,阮友當,NGUYỄN HỮU ĐANG
 VNW0010878,黎文三,LÊ VĂN TAM
@@ -98,52 +119,36 @@ VNW0019196,武文源,VÕ VĂN NGUYÊN
 VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
 
     let list = JSON.parse(localStorage.getItem('lotteryList')) || rawData.split('\n').map(l => l.trim());
-    let isRolling = false, activated = false, lastIdx = -1, isAwardEffect = false, isFire = false;
+    let isRolling = false, activated = false, lastIdx = -1, isFire = false;
     const awards = ['award1.mp3', 'award2.mp3', 'award3.mp3'];
 
     const idEl = document.getElementById('name-id'), chEl = document.getElementById('name-ch'), vnEl = document.getElementById('name-vn'), cntEl = document.getElementById('count');
-    const awardUI = document.getElementById('award-overlay'), box = document.getElementById('display-box');
+    const awardUI = document.getElementById('award-overlay'), box = document.getElementById('display-box'), sun = document.getElementById('sunburst-overlay');
 
-    // --- 整合特效畫布系統 ---
-    const canv = document.getElementById('fx-canvas'), ctx = canv.getContext('2d');
-    let rotation = 0, parts = [];
+    // --- 煙火畫布與清空邏輯 ---
+    const canv = document.getElementById('fire-canvas'), ctx = canv.getContext('2d');
+    let parts = [];
 
     function resize() { canv.width = window.innerWidth; canv.height = window.innerHeight; }
     window.addEventListener('resize', resize); resize();
 
     function drawFX() {
-        ctx.clearRect(0, 0, canv.width, canv.height);
+        // 使用半透明黑色填充來清除，達到「拖尾」並最終消失的效果
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; 
+        ctx.fillRect(0, 0, canv.width, canv.height);
 
-        // 1. 繪製 10 道金光旋轉 (頒獎模式)
-        if (isAwardEffect) {
-            ctx.save();
-            ctx.translate(canv.width/2, canv.height/2);
-            ctx.rotate(rotation);
-            const rays = 20; // 10光+10空
-            const angle = (Math.PI * 2) / rays;
-            for (let i = 0; i < rays; i++) {
-                if (i % 2 === 0) {
-                    ctx.beginPath();
-                    ctx.moveTo(0, 0);
-                    ctx.arc(0, 0, Math.max(canv.width, canv.height) * 2, i * angle, i * angle + angle / 2);
-                    ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
-                    ctx.fill();
-                }
-            }
-            ctx.restore();
-            rotation += 0.015;
-        }
-
-        // 2. 繪製豪華煙火 (中獎模式)
         if (isFire || parts.length > 0) {
-            if (isFire && Math.random() < 0.2) { 
+            if (isFire && Math.random() < 0.25) { 
                 const x = Math.random()*canv.width, y = Math.random()*canv.height*0.5, col = `hsl(${Math.random()*360},100%,60%)`;
-                for(let i=0; i<70; i++) parts.push({x,y,vx:(Math.random()-0.5)*18,vy:(Math.random()-0.5)*18,a:1,col});
+                for(let i=0; i<80; i++) parts.push({x,y,vx:(Math.random()-0.5)*20,vy:(Math.random()-0.5)*20,a:1,col});
             }
             parts.forEach((p,i) => {
-                p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.a-=0.012;
-                if(p.a>0) { ctx.globalAlpha=p.a; ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2); ctx.fillStyle=p.col; ctx.fill(); }
-                else parts.splice(i,1);
+                p.x+=p.vx; p.y+=p.vy; p.vy+=0.18; p.a-=0.015; // 加快消失速度
+                if(p.a>0) { 
+                    ctx.globalAlpha=p.a; ctx.beginPath(); ctx.arc(p.x,p.y,4.5,0,Math.PI*2); ctx.fillStyle=p.col; ctx.fill(); 
+                } else {
+                    parts.splice(i,1);
+                }
             });
             ctx.globalAlpha = 1;
         }
@@ -166,12 +171,14 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
         if (audAward.paused) {
             audAward.src = awards[Math.floor(Math.random() * awards.length)];
             audAward.play().catch(()=>{});
-            isAwardEffect = true;
-            box.style.visibility = 'hidden'; awardUI.style.display = 'flex';
+            box.style.visibility = 'hidden'; 
+            awardUI.style.display = 'flex';
+            sun.style.display = 'block'; // 顯示 10 道金光
         } else {
             audAward.pause();
-            isAwardEffect = false;
-            box.style.visibility = 'visible'; awardUI.style.display = 'none';
+            box.style.visibility = 'visible'; 
+            awardUI.style.display = 'none';
+            sun.style.display = 'none'; // 隱藏 10 道金光
         }
     }
 
@@ -199,9 +206,12 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
                     localStorage.setItem('lotteryList', JSON.stringify(list));
                     cntEl.innerText = list.length;
                     idEl.innerText = "NEXT"; chEl.innerText = "準備抽獎"; vnEl.innerText = "Sẵn sàng";
-                    chEl.style.color = "white"; isFire = false; box.classList.remove('winning-zoom');
+                    chEl.style.color = "white"; 
+                    isFire = false; // 中獎確認後停止噴發
+                    box.classList.remove('winning-zoom');
                 } else {
-                    isFire = false; box.classList.remove('winning-zoom');
+                    isFire = false;
+                    box.classList.remove('winning-zoom');
                 }
             }, 800);
         }
