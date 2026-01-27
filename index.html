@@ -2,53 +2,42 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>2026 尾牙大抽獎 - 整備課專用版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 尾牙大抽獎 - 整備課強化版</title>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; background-color: #000; color: #fff; font-family: "Microsoft JhengHei", sans-serif; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
 
-        /* --- 1. 放射金光特效層 (10道金光) --- */
-        #sunburst-overlay {
-            position: fixed; top: 50%; left: 50%; width: 500vmax; height: 500vmax; 
-            transform: translate(-50%, -50%);
-            /* 10道金光：360度/10道 = 36度一組(18度金, 18度透明) */
-            background: repeating-conic-gradient(
-                #ffd700 0deg 18deg,
-                transparent 18deg 36deg
-            );
-            z-index: 1; 
-            display: none; /* 頒獎時才會顯示 */
-            animation: rotateSun 15s linear infinite;
-        }
-        @keyframes rotateSun { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+        /* --- 畫布層 (特效核心) --- */
+        #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        #fire-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
 
         /* 標題與狀態 */
         #header-title { position: fixed; top: 40px; width: 100%; text-align: center; font-size: 50px; color: #ffd700; text-shadow: 0 0 20px rgba(255,215,0,0.8); z-index: 100; font-weight: bold; }
         #status { position: fixed; top: 20px; right: 20px; color: #888; z-index: 100; font-size: 20px; }
 
-        /* 內容顯示區 (人員ID/中/越) */
+        /* 抽獎主顯示區 */
         #display-box { text-align: center; z-index: 50; width: 100%; display: flex; flex-direction: column; gap: 10px; }
         #name-id { font-size: 40px; color: #888; letter-spacing: 5px; margin: 0; }
         #name-ch { font-size: 140px; font-weight: bold; margin: 0; color: #fff; text-shadow: 2px 2px 10px #000; }
         #name-vn { font-size: 80px; font-style: italic; color: #4da6ff; margin: 0; text-shadow: 2px 2px 10px #000; }
 
-        /* 頒獎層 */
+        /* 頒獎層 (文字與布局) */
         #award-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             display: none; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 80; background: rgba(0,0,0,0.4);
+            z-index: 80;
         }
-        #award-msg { font-size: 110px; font-weight: bold; color: #ff3333; text-shadow: 0 0 25px #fff; text-align: center; line-height: 1.2; z-index: 90; }
+        #award-msg { font-size: 110px; font-weight: bold; color: #ff3333; text-shadow: 0 0 25px #fff, 0 0 50px #ff3333; text-align: center; line-height: 1.2; z-index: 90; }
 
-        #canvas-fire { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
-        .winning-zoom { animation: pulse 0.6s infinite; }
+        .winning-zoom { animation: pulse 0.5s infinite; color: #ffd700 !important; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body onclick="activateSystem()">
 
-    <div id="sunburst-overlay"></div>
-    <canvas id="canvas-fire"></canvas>
+    <canvas id="bg-canvas"></canvas>
+    <canvas id="fire-canvas"></canvas>
     
     <div id="status">剩餘人數: <span id="count">--</span></div>
     <div id="header-title">🎊 2026 YEAR-END PARTY 🎊</div>
@@ -68,19 +57,18 @@
     <audio id="snd-award"></audio>
 
 <script>
-    // 完整人員名單 (人員ID, 中文姓名, 越南姓名) 
     const rawData = `VNW0000434,阮春決,NGUYỄN XUÂN QUYẾT
 VNW0003475,阮德勇,NGUYỄN ĐỨC DŨNG
 VNW0004172,阮志青,NGUYỄN CHÍ THANH
 VNW0004182,黎越龍,LÊ VIỆT LONG
-VNW0005167,阮文南,NGUYỄN VĂN NAM
+VNW0005167,阮文裝,NGUYỄN VĂN NAM
 VNW0005775,范誠江,PHẠM THÀNH GIANG
 VNW0008908,胡仲捷,HỒ TRỌNG TIẾP
 VNW0011643,段英俊,ĐOÀN ANH TUẤN
 VNW0008906,阮裴創,NGUYỄN BÙI SANG
 VNW0008929,阮文俠,NGUYỄN VĂN HIỆP
 VNW0009048,阮文數,NGUYỄN VĂN TOÁN
-VNW0009112,梅懷南,MAI HOÀI NAM
+VNW0009112,梅懷南,MAI HOÀİ NAM
 VNW0009713,張功定,TRƯƠNG CÔNG ĐỊNH
 VNW0009901,阮友當,NGUYỄN HỮU ĐANG
 VNW0010878,黎文三,LÊ VĂN TAM
@@ -111,18 +99,43 @@ VNW0019196,武文源,VÕ VĂN NGUYÊN
 VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
 
     let list = JSON.parse(localStorage.getItem('lotteryList')) || rawData.split('\n').map(l => l.trim());
-    let isRolling = false, activated = false, lastIdx = -1, isFire = false;
+    let isRolling = false, activated = false, lastIdx = -1, isAwardEffect = false, isFire = false;
     const awards = ['award1.mp3', 'award2.mp3', 'award3.mp3'];
 
     const idEl = document.getElementById('name-id'), chEl = document.getElementById('name-ch'), vnEl = document.getElementById('name-vn'), cntEl = document.getElementById('count');
-    const box = document.getElementById('display-box'), awardUI = document.getElementById('award-overlay'), sun = document.getElementById('sunburst-overlay');
+    const awardUI = document.getElementById('award-overlay'), box = document.getElementById('display-box');
+
+    // --- 10道旋轉光畫布核心 ---
+    const bgCanv = document.getElementById('bg-canvas'), bgCtx = bgCanv.getContext('2d');
+    let rotation = 0;
+    function resize() { bgCanv.width = window.innerWidth; bgCanv.height = window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
+
+    function drawSunburst() {
+        if (!isAwardEffect) { bgCtx.clearRect(0, 0, bgCanv.width, bgCanv.height); return; }
+        bgCtx.save();
+        bgCtx.translate(bgCanv.width/2, bgCanv.height/2);
+        bgCtx.rotate(rotation);
+        const rays = 20; // 10道金光 + 10道透明 = 20
+        const angle = (Math.PI * 2) / rays;
+        for (let i = 0; i < rays; i++) {
+            bgCtx.beginPath();
+            bgCtx.moveTo(0, 0);
+            bgCtx.arc(0, 0, Math.max(bgCanv.width, bgCanv.height) * 2, i * angle, i * angle + angle / 2);
+            bgCtx.closePath();
+            bgCtx.fillStyle = (i % 2 === 0) ? 'rgba(255, 215, 0, 0.4)' : 'transparent';
+            bgCtx.fill();
+        }
+        bgCtx.restore();
+        rotation += 0.01;
+    }
 
     function activateSystem() {
         if (!activated) {
             activated = true;
             cntEl.innerText = list.length;
             chEl.innerText = "準備抽獎"; vnEl.innerText = "Sẵn sàng";
-            chEl.style.color = "white";
+            chEl.style.color = "#fff";
         }
     }
 
@@ -132,9 +145,12 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
         if (audAward.paused) {
             audAward.src = awards[Math.floor(Math.random() * awards.length)];
             audAward.play().catch(()=>{});
-            box.style.visibility = 'hidden'; awardUI.style.display = 'flex'; sun.style.display = 'block';
+            isAwardEffect = true;
+            box.style.visibility = 'hidden'; awardUI.style.display = 'flex';
         } else {
-            audAward.pause(); box.style.visibility = 'visible'; awardUI.style.display = 'none'; sun.style.display = 'none';
+            audAward.pause();
+            isAwardEffect = false;
+            box.style.visibility = 'visible'; awardUI.style.display = 'none';
         }
     }
 
@@ -157,34 +173,41 @@ VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
             isFire = true; chEl.style.color = '#ffd700'; vnEl.style.color = '#ffd700'; box.classList.add('winning-zoom');
             setTimeout(() => {
                 const [vid, vch] = list[lastIdx].split(',');
-                if (confirm(`🎉 恭喜中獎: ${vch} (${vid})\n是否移除名單？`)) {
+                if (confirm(`🎉 恭喜中獎: ${vch} (${vid})\n是否移除？`)) {
                     list.splice(lastIdx, 1);
                     localStorage.setItem('lotteryList', JSON.stringify(list));
                     cntEl.innerText = list.length;
-                    idEl.innerText = "READY"; chEl.innerText = "準備抽獎"; vnEl.innerText = "Sẵn sàng";
+                    idEl.innerText = "NEXT"; chEl.innerText = "準備抽獎"; vnEl.innerText = "Sẵn sàng";
                     chEl.style.color = "white"; isFire = false; box.classList.remove('winning-zoom');
                 }
             }, 800);
         }
     }
 
-    // 煙火特效
-    const canv = document.getElementById('canvas-fire'), ctx = canv.getContext('2d');
-    let parts = []; canv.width = window.innerWidth; canv.height = window.innerHeight;
-    function anim() {
-        requestAnimationFrame(anim);
-        ctx.fillStyle = 'rgba(0,0,0,0.2)'; ctx.fillRect(0,0,canv.width,canv.height);
-        if (isFire && Math.random() < 0.05) {
-            const x = Math.random()*canv.width, y = Math.random()*canv.height*0.4, col = `hsl(${Math.random()*360},100%,60%)`;
-            for(let i=0; i<30; i++) parts.push({x,y,vx:(Math.random()-0.5)*10,vy:(Math.random()-0.5)*10,a:1,col});
+    // --- 豪華煙火畫布核心 ---
+    const fireCanv = document.getElementById('fire-canvas'), fireCtx = fireCanv.getContext('2d');
+    let parts = [];
+    fireCanv.width = window.innerWidth; fireCanv.height = window.innerHeight;
+    function drawFire() {
+        fireCtx.fillStyle = 'rgba(0,0,0,0.15)'; fireCtx.fillRect(0,0,fireCanv.width,fireCanv.height);
+        // 大幅增加煙火觸發量
+        if (isFire && Math.random() < 0.2) { 
+            const x = Math.random()*fireCanv.width, y = Math.random()*fireCanv.height*0.5, col = `hsl(${Math.random()*360},100%,60%)`;
+            for(let i=0; i<60; i++) parts.push({x,y,vx:(Math.random()-0.5)*15,vy:(Math.random()-0.5)*15,a:1,col});
         }
         parts.forEach((p,i) => {
-            p.x+=p.vx; p.y+=p.vy; p.vy+=0.15; p.a-=0.012;
-            if(p.a>0) { ctx.globalAlpha=p.a; ctx.beginPath(); ctx.arc(p.x,p.y,3,0,7); ctx.fillStyle=p.col; ctx.fill(); }
+            p.x+=p.vx; p.y+=p.vy; p.vy+=0.12; p.a-=0.01;
+            if(p.a>0) { fireCtx.globalAlpha=p.a; fireCtx.beginPath(); fireCtx.arc(p.x,p.y,3.5,0,Math.PI*2); fireCtx.fillStyle=p.col; fireCtx.fill(); }
             else parts.splice(i,1);
         });
     }
-    anim();
+
+    function mainLoop() {
+        drawSunburst();
+        drawFire();
+        requestAnimationFrame(mainLoop);
+    }
+    mainLoop();
 
     document.addEventListener('keydown', (e) => {
         if (e.code === 'Space') { e.preventDefault(); handleDraw(); }
