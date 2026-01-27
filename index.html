@@ -2,44 +2,69 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>2026 尾牙大抽獎 - 穩定修復版</title>
+    <title>2026 尾牙大抽獎 - 10道金光強化版</title>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; background-color: #000; color: #fff; font-family: "Microsoft JhengHei", sans-serif; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
 
-        /* 1. 輻射閃爍旋轉背景 */
+        /* --- 1. 10道金光環繞背景 --- */
         #sunburst-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
             display: none; z-index: 5; pointer-events: none;
         }
         #sunburst-core {
-            position: absolute; top: 50%; left: 50%; width: 400vmax; height: 400vmax;
+            position: absolute; top: 50%; left: 50%; width: 500vmax; height: 500vmax;
             transform: translate(-50%, -50%);
-            background: conic-gradient(from 0deg, rgba(255, 215, 0, 0.8) 0deg 15deg, transparent 15deg 30deg);
-            animation: rotateSun 15s linear infinite, flashSun 0.4s ease-in-out infinite alternate;
+            /* 精確計算：10道金光 = 10道光芒 + 10道間隙，每段 18度 (360/20) */
+            background: conic-gradient(
+                from 0deg, 
+                #ffd700 0deg 18deg, 
+                transparent 18deg 36deg,
+                #ffd700 36deg 54deg,
+                transparent 54deg 72deg,
+                #ffd700 72deg 90deg,
+                transparent 90deg 108deg,
+                #ffd700 108deg 126deg,
+                transparent 126deg 144deg,
+                #ffd700 144deg 162deg,
+                transparent 162deg 180deg,
+                #ffd700 180deg 198deg,
+                transparent 198deg 216deg,
+                #ffd700 216deg 234deg,
+                transparent 234deg 252deg,
+                #ffd700 252deg 270deg,
+                transparent 270deg 288deg,
+                #ffd700 288deg 306deg,
+                transparent 306deg 324deg,
+                #ffd700 324deg 342deg,
+                transparent 342deg 360deg
+            );
+            animation: rotateSun 10s linear infinite;
+            opacity: 0.6;
         }
         @keyframes rotateSun { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
-        @keyframes flashSun { from { opacity: 0.1; } to { opacity: 0.5; } }
 
-        /* 2. 標題層 */
+        /* 標題層 */
         #header-title { position: fixed; top: 40px; width: 100%; text-align: center; font-size: 50px; color: #ffd700; text-shadow: 0 0 20px rgba(255,215,0,0.8); z-index: 100; font-weight: bold; }
         #status { position: fixed; top: 20px; right: 20px; color: #888; z-index: 100; font-size: 20px; }
 
-        /* 3. 抽獎內容區 */
+        /* 內容顯示區 */
         #display-box { text-align: center; z-index: 50; width: 100%; }
         #name-ch { font-size: 140px; font-weight: bold; margin: 0; color: #fff; text-shadow: 2px 2px 10px #000; }
         #name-vn { font-size: 80px; font-style: italic; color: #4da6ff; margin-top: 20px; text-shadow: 2px 2px 10px #000; }
 
-        /* 4. 頒獎訊息區 */
+        /* 頒獎層 */
         #award-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             display: none; flex-direction: column; align-items: center; justify-content: center;
             z-index: 80;
+            background: radial-gradient(circle, rgba(255,215,0,0.2) 0%, rgba(0,0,0,0.8) 70%);
         }
-        #award-msg { font-size: 110px; font-weight: bold; color: #ff3333; text-shadow: 0 0 25px #fff, 0 0 50px #ff3333; text-align: center; line-height: 1.2; }
+        #award-msg { font-size: 110px; font-weight: bold; color: #ff3333; text-shadow: 0 0 25px #fff, 0 0 50px #ff3333; text-align: center; line-height: 1.2; z-index: 90; }
 
         #keyboard-hint { position: fixed; bottom: 20px; color: #444; font-size: 16px; z-index: 100; width: 100%; text-align: center; }
         #canvas-fire { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+        
         .winning-zoom { animation: pulse 0.6s infinite; color: #ffd700 !important; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
     </style>
@@ -53,7 +78,7 @@
     <div id="header-title">🎊 2026 YEAR-END PARTY 🎊</div>
 
     <div id="display-box">
-        <div id="name-ch">點擊螢幕啟動</div>
+        <div id="name-ch" style="color:#ffd700">點擊螢幕啟動</div>
         <div id="name-vn">Bấm để bắt đầu</div>
     </div>
 
@@ -61,15 +86,14 @@
         <div id="award-msg">恭喜中獎！<br><span style="font-size: 65px; color: gold;">Chúc Mừng Trúng Giải!</span></div>
     </div>
 
-    <div id="keyboard-hint">[空白鍵] 抽獎 | [Enter] 頒獎音樂 | [Shift+L] 貼上名單</div>
+    <div id="keyboard-hint">[空白鍵] 抽獎 | [Enter] 頒獎模式 | [Shift+L] 更新名單</div>
 
     <audio id="snd-drum" src="drum.mp3" loop></audio>
     <audio id="snd-gong" src="gong.mp3"></audio>
     <audio id="snd-award"></audio>
 
 <script>
-    // 預設名單 (若讀取不到 localStorage 則使用此名單) 
-    let defaultList = ["阮春決,NGUYỄN XUÂN QUYẾT", "阮德勇,NGUYỄN ĐỨC DŨNG", "阮志青,NGUYỄN CHÍ THANH", "黎越龍,LÊ VIỆT LONG", "阮文南,NGUYỄN VĂN NAM", "范誠江,PHẠM THÀNH GIANG", "胡仲捷,HỒ TRỌNG TIẾP", "段英俊,ĐOÀN ANH TUẤN", "阮裴創,NGUYỄN BÙI SANG", "阮文俠,NGUYỄN VĂN HIỆP", "阮文數,NGUYỄN VĂN TOÁN", "梅懷南,MAI HOÀI NAM", "張功定,TRƯƠNG CÔNG ĐỊNH", "阮友當,NGUYỄN HỮU ĐANG", "黎文三,LÊ VĂN TAM", "阮文山,NGUYỄN VĂN SƠN", "胡文明,HỒ VĂN MINH", "黎文頓,LÊ VĂN ĐỐN", "陳世龍,TRẦN THẾ LỘNG", "段文龍,ĐOÀN VĂN LONG", "黎文芳,LÊ VĂN PHƯƠNG", "阮嘉陽,NGUYỄN GIA DƯƠNG", "張光雄,TRƯƠNG QUANG HÙNG", "黎德壽,LÊ ĐỨC THỌ", "阮文德,NGUYỄN VĂN ĐỨC", "范泰陽,PHẠM THÁI DƯƠNG", "范方南,PHẠM PHƯƠNG NAM", "阮明創,NGUYỄN MINH SANG", "阮庭決,NGUYỄN ĐÌNH QUYẾT", "陳友俊,TRẦN HỮU TUẤN", "阮文泰,NGUYỄN VĂN THÁI", "留光靈,LƯU QUANG LINH", "黎曰德,LÊ VIẾT ĐỨC", "阮文頭,NGUYỄN VĂN ĐẦU", "林青心,LÂM THANH TÂM", "范國越,PHẠM QUỐC VIỆT", "允文子,DOÃN VĂN TÝ", "潘友功,PHAN HỮU CÔNG", "武文源,VÕ VĂN NGUYÊN", "黎玉俊英,LÊ NGỌC TUẤN ANH"];
+    let defaultList = ["阮春決,NGUYỄN XUÂN QUYẾT", "阮德勇,NGUYỄN ĐỨC DŨNG", "阮志青,NGUYỄN CHÍ THANH", "黎越龍,LÊ VIỆT LONG", "阮文南,NGUYỄN VĂN NAM", "范誠江,PHẠM THÀNH GIANG", "胡仲捷,HỒ TRỌNG TIẾP", "段英俊,ĐOÀN ANH TUẤN", "阮裴創,NGUYỄN BÙI SANG", "阮文俠,NGUYỄN VĂN HIỆP", "阮文數,NGUYỄN VĂN TOÁN", "梅懷南,MAI HOÀİ NAM", "張功定,TRƯƠNG CÔNG ĐỊNH", "阮友當,NGUYỄN HỮU ĐANG", "黎文三,LÊ VĂN TAM", "阮文山,NGUYỄN VĂN SƠN", "胡文明,HỒ VĂN MINH", "黎文頓,LÊ VĂN ĐỐN", "陳世龍,TRẦN THẾ LỘNG", "段文龍,ĐOÀN VĂN LONG", "黎文芳,LÊ VĂN PHƯƠNG", "阮嘉陽,NGUYỄN GIA DƯƠNG", "張光雄,TRƯƠNG QUANG HÙNG", "黎德壽,LÊ ĐỨC THỌ", "阮文德,NGUYỄN VĂN ĐỨC", "范泰陽,PHẠM THÁI DƯƠNG", "范方南,PHẠM PHƯƠNG NAM", "阮明創,NGUYỄN MINH SANG", "阮庭決,NGUYỄN ĐÌNH QUYẾT", "陳友俊,TRẦN HỮU TUẤN", "阮文泰,NGUYỄN VĂN THÁI", "留光靈,LƯU QUANG LINH", "黎曰德,LÊ VIẾT ĐỨC", "阮文頭,NGUYỄN VĂN ĐẦU", "林青心,LÂM THANH TÂM", "范國越,PHẠM QUỐC VIỆT", "允文子,DOÃN VĂN TÝ", "潘友功,PHAN HỮU CÔNG", "武文源,VÕ VĂN NGUYÊN", "黎玉俊英,LÊ NGỌC TUẤN ANH"];
 
     let list = JSON.parse(localStorage.getItem('lotteryList')) || defaultList;
     let isRolling = false, isFire = false, activated = false, timer, lastIdx = -1;
@@ -83,11 +107,11 @@
         if (!activated) {
             activated = true;
             ch.innerText = "準備抽獎"; vn.innerText = "Sẵn sàng";
+            ch.style.color = "white";
             cnt.innerText = list.length;
         }
     }
 
-    // 頒獎音樂控制 (限制抽獎中不可按 Enter)
     function toggleAward() {
         if (isRolling || !activated) return; 
         if (audAward.paused) {
@@ -99,14 +123,13 @@
         }
     }
 
-    // 手動匯入名單功能 (解決讀取 txt 失敗的問題)
     function importList() {
         let rawNames = prompt("請貼上 names.txt 的內容：");
         if (rawNames) {
             list = rawNames.split('\n').map(l => l.trim()).filter(l => l !== "");
             localStorage.setItem('lotteryList', JSON.stringify(list));
             cnt.innerText = list.length;
-            alert("名單已更新！剩餘 " + list.length + " 人。");
+            alert("名單已更新！");
         }
     }
 
@@ -162,10 +185,8 @@
     document.addEventListener('keydown', (e) => {
         if (e.code === 'Space') { e.preventDefault(); handleDraw(); }
         if (e.code === 'Enter') { e.preventDefault(); toggleAward(); }
-        if (e.shiftKey && e.key === 'L') { importList(); } // 按 Shift + L 手動更新名單
+        if (e.shiftKey && e.key === 'L') { importList(); }
     });
 </script>
 </body>
 </html>
-
-
