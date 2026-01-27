@@ -3,50 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 尾牙大抽獎 - 整備課強化版</title>
+    <title>2026 尾牙大抽獎 - 整備課終極版</title>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; background-color: #000; color: #fff; font-family: "Microsoft JhengHei", sans-serif; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
 
-        /* --- 1. 背景金光放射層 (與圖片一致的放射效果) --- */
-        #sunburst-overlay {
-            position: fixed; top: 50%; left: 50%; width: 600vmax; height: 600vmax; 
-            transform: translate(-50%, -50%);
-            /* 10道強力放射金光 */
-            background: repeating-conic-gradient(
-                #ffd700 0deg 18deg, 
-                transparent 18deg 36deg
-            );
-            z-index: 1;
-            display: none; /* 預設關閉，頒獎音樂啟動後才開啟 */
-            animation: rotateSun 15s linear infinite;
-            filter: blur(2px); /* 增加一點發光感 */
-        }
-        @keyframes rotateSun { 
-            from { transform: translate(-50%, -50%) rotate(0deg); } 
-            to { transform: translate(-50%, -50%) rotate(360deg); } 
-        }
+        /* 特效層放置於最底層 */
+        #fx-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
 
-        /* 畫布層：煙火專用 */
-        #fire-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+        /* 標題與狀態 */
+        #header-title { position: fixed; top: 40px; width: 100%; text-align: center; font-size: 50px; color: #ffd700; text-shadow: 0 0 20px rgba(255,215,0,0.8); z-index: 100; font-weight: bold; }
+        #status { position: fixed; top: 20px; right: 30px; color: #888; z-index: 100; font-size: 20px; }
 
-        /* 頂部標題與狀態 */
-        #header-title { position: fixed; top: 40px; width: 100%; text-align: center; font-size: 55px; color: #ffd700; text-shadow: 0 0 20px rgba(255,215,0,0.8); z-index: 100; font-weight: bold; }
-        #status { position: fixed; top: 20px; right: 30px; color: #888; z-index: 100; font-size: 24px; }
+        /* 內容顯示區 */
+        #display-box { text-align: center; z-index: 50; width: 100%; display: flex; flex-direction: column; gap: 10px; }
+        #name-id { font-size: 40px; color: #ffd700; letter-spacing: 5px; margin: 0; }
+        #name-ch { font-size: 140px; font-weight: bold; margin: 0; color: #fff; text-shadow: 2px 2px 10px #000; }
+        #name-vn { font-size: 80px; font-style: italic; color: #4da6ff; margin: 0; text-shadow: 2px 2px 10px #000; }
 
-        /* 抽獎主顯示區 (三行) */
-        #display-box { text-align: center; z-index: 50; width: 100%; display: flex; flex-direction: column; gap: 15px; }
-        #name-id { font-size: 45px; color: #666; letter-spacing: 5px; margin: 0; }
-        #name-ch { font-size: 160px; font-weight: bold; margin: 0; color: #fff; text-shadow: 2px 2px 15px #000; }
-        #name-vn { font-size: 85px; font-style: italic; color: #4da6ff; margin: 0; text-shadow: 2px 2px 15px #000; }
-
-        /* 頒獎層 */
+        /* 頒獎 overlay */
         #award-overlay {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             display: none; flex-direction: column; align-items: center; justify-content: center;
             z-index: 80;
         }
-        #award-msg { font-size: 130px; font-weight: bold; color: #ff3333; text-shadow: 0 0 30px #fff, 0 0 60px #ff3333; text-align: center; line-height: 1.2; z-index: 90; }
+        #award-msg { font-size: 110px; font-weight: bold; color: #ff3333; text-shadow: 0 0 25px #fff, 0 0 50px #ff3333; text-align: center; line-height: 1.2; }
 
         .winning-zoom { animation: pulse 0.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
@@ -54,21 +35,19 @@
 </head>
 <body onclick="activateSystem()">
 
-    <div id="sunburst-overlay"></div>
-    
-    <canvas id="fire-canvas"></canvas>
+    <canvas id="fx-canvas"></canvas>
     
     <div id="status">剩餘人數: <span id="count">--</span></div>
     <div id="header-title">🎊 2026 YEAR-END PARTY 🎊</div>
 
     <div id="display-box">
-        <div id="name-id" style="color: #ffd700;">READY</div>
+        <div id="name-id">READY</div>
         <div id="name-ch">點擊螢幕啟動</div>
         <div id="name-vn">Bấm để bắt đầu</div>
     </div>
 
     <div id="award-overlay">
-        <div id="award-msg">恭喜中獎！<br><span style="font-size: 75px; color: gold;">Chúc Mừng Trúng Giải!</span></div>
+        <div id="award-msg">恭喜中獎！<br><span style="font-size: 65px; color: gold;">Chúc Mừng Trúng Giải!</span></div>
     </div>
 
     <audio id="snd-drum" src="drum.mp3" loop></audio>
@@ -76,7 +55,7 @@
     <audio id="snd-award"></audio>
 
 <script>
-    // 內建人員名單 
+    // 名單配置
     const rawData = `VNW0000434,阮春決,NGUYỄN XUÂN QUYẾT
 VNW0003475,阮德勇,NGUYỄN ĐỨC DŨNG
 VNW0004172,阮志青,NGUYỄN CHÍ THANH
@@ -119,99 +98,121 @@ VNW0019196,武文源,VÕ VĂN NGUYÊN
 VNW0000478,黎玉俊英,LÊ NGỌC TUẤN ANH`;
 
     let list = JSON.parse(localStorage.getItem('lotteryList')) || rawData.split('\n').map(l => l.trim());
-    let isRolling = false, activated = false, lastIdx = -1, isFire = false;
-    const awards = ['award1.mp3', 'award2.mp3', 'award3.mp3'];
+    let isRolling = false, activated = false, lastIdx = -1, isAwarding = false, isFiring = false;
+    
+    // 頒獎音樂四首
+    const awards = ['award1.mp3', 'award2.mp3', 'award3.mp3', 'award4.mp3'];
 
-    const idEl = document.getElementById('name-id'), chEl = document.getElementById('name-ch'), vnEl = document.getElementById('name-vn'), cntEl = document.getElementById('count');
-    const awardUI = document.getElementById('award-overlay'), box = document.getElementById('display-box'), sun = document.getElementById('sunburst-overlay');
-
-    // --- 煙火畫布與清空邏輯 ---
-    const canv = document.getElementById('fire-canvas'), ctx = canv.getContext('2d');
-    let parts = [];
+    const canv = document.getElementById('fx-canvas'), ctx = canv.getContext('2d');
+    let rotation = 0, parts = [];
 
     function resize() { canv.width = window.innerWidth; canv.height = window.innerHeight; }
     window.addEventListener('resize', resize); resize();
 
-    function drawFX() {
-        // 使用半透明黑色填充來清除，達到「拖尾」並最終消失的效果
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; 
+    // 特效繪製主迴圈
+    function draw() {
+        // 使用半透明清除，讓煙火自然消失
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
         ctx.fillRect(0, 0, canv.width, canv.height);
 
-        if (isFire || parts.length > 0) {
-            if (isFire && Math.random() < 0.25) { 
-                const x = Math.random()*canv.width, y = Math.random()*canv.height*0.5, col = `hsl(${Math.random()*360},100%,60%)`;
-                for(let i=0; i<80; i++) parts.push({x,y,vx:(Math.random()-0.5)*20,vy:(Math.random()-0.5)*20,a:1,col});
+        // 1. 頒獎金光特效 (10道)
+        if (isAwarding) {
+            ctx.save();
+            ctx.translate(canv.width / 2, canv.height / 2);
+            ctx.rotate(rotation);
+            for (let i = 0; i < 10; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                // 每個扇區 36度，光芒佔 18度
+                ctx.arc(0, 0, Math.max(canv.width, canv.height) * 2, (i * 36 * Math.PI) / 180, (i * 36 + 18) * Math.PI / 180);
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.4)';
+                ctx.fill();
             }
-            parts.forEach((p,i) => {
-                p.x+=p.vx; p.y+=p.vy; p.vy+=0.18; p.a-=0.015; // 加快消失速度
-                if(p.a>0) { 
-                    ctx.globalAlpha=p.a; ctx.beginPath(); ctx.arc(p.x,p.y,4.5,0,Math.PI*2); ctx.fillStyle=p.col; ctx.fill(); 
-                } else {
-                    parts.splice(i,1);
-                }
-            });
-            ctx.globalAlpha = 1;
+            ctx.restore();
+            rotation += 0.01;
         }
-        requestAnimationFrame(drawFX);
+
+        // 2. 煙火特效
+        if (isFiring && Math.random() < 0.2) {
+            const x = Math.random() * canv.width, y = Math.random() * canv.height * 0.4;
+            const col = `hsl(${Math.random() * 360}, 100%, 60%)`;
+            for (let i = 0; i < 80; i++) {
+                parts.push({ x, y, vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15, a: 1, col });
+            }
+        }
+        parts.forEach((p, i) => {
+            p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.a -= 0.015;
+            if (p.a > 0) {
+                ctx.globalAlpha = p.a; ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, 7);
+                ctx.fillStyle = p.col; ctx.fill();
+            } else {
+                parts.splice(i, 1);
+            }
+        });
+        ctx.globalAlpha = 1;
+        requestAnimationFrame(draw);
     }
-    drawFX();
+    draw();
 
     function activateSystem() {
         if (!activated) {
             activated = true;
-            cntEl.innerText = list.length;
-            chEl.innerText = "準備抽獎"; vnEl.innerText = "Sẵn sàng";
-            chEl.style.color = "#fff";
+            document.getElementById('count').innerText = list.length;
+            document.getElementById('name-ch').innerText = "準備抽獎";
+            document.getElementById('name-ch').style.color = "white";
         }
     }
 
     function toggleAward() {
-        if (isRolling || !activated) return; 
-        const audAward = document.getElementById('snd-award');
-        if (audAward.paused) {
-            audAward.src = awards[Math.floor(Math.random() * awards.length)];
-            audAward.play().catch(()=>{});
-            box.style.visibility = 'hidden'; 
-            awardUI.style.display = 'flex';
-            sun.style.display = 'block'; // 顯示 10 道金光
+        if (isRolling || !activated) return;
+        const aud = document.getElementById('snd-award');
+        if (aud.paused) {
+            aud.src = awards[Math.floor(Math.random() * awards.length)];
+            aud.play().catch(() => {});
+            isAwarding = true;
+            document.getElementById('display-box').style.visibility = 'hidden';
+            document.getElementById('award-overlay').style.display = 'flex';
         } else {
-            audAward.pause();
-            box.style.visibility = 'visible'; 
-            awardUI.style.display = 'none';
-            sun.style.display = 'none'; // 隱藏 10 道金光
+            aud.pause();
+            isAwarding = false;
+            document.getElementById('display-box').style.visibility = 'visible';
+            document.getElementById('award-overlay').style.display = 'none';
         }
     }
 
     function handleDraw() {
-        if (!activated || list.length === 0 || awardUI.style.display === 'flex') return;
+        if (!activated || list.length === 0 || isAwarding) return;
         if (!isRolling) {
-            isRolling = true; isFire = false;
-            box.classList.remove('winning-zoom');
-            document.getElementById('snd-drum').play().catch(()=>{});
+            isRolling = true; isFiring = false;
+            document.getElementById('display-box').classList.remove('winning-zoom');
+            document.getElementById('snd-drum').play().catch(() => {});
             timer = setInterval(() => {
                 lastIdx = Math.floor(Math.random() * list.length);
-                const [vid, vch, vvn] = list[lastIdx].split(',');
-                idEl.innerText = vid; chEl.innerText = vch; vnEl.innerText = vvn;
-                chEl.style.color = ['#ff4d4d', '#ffd700', '#4dff4d', '#00ffff'][Math.floor(Math.random()*4)];
+                const [id, ch, vn] = list[lastIdx].split(',');
+                document.getElementById('name-id').innerText = id;
+                document.getElementById('name-ch').innerText = ch;
+                document.getElementById('name-vn').innerText = vn;
+                document.getElementById('name-ch').style.color = ['#ff4d4d', '#ffd700', '#4dff4d', '#00ffff'][Math.floor(Math.random() * 4)];
             }, 60);
         } else {
             isRolling = false; clearInterval(timer);
             document.getElementById('snd-drum').pause();
-            document.getElementById('snd-gong').play().catch(()=>{});
-            isFire = true; chEl.style.color = '#ffd700'; vnEl.style.color = '#ffd700'; box.classList.add('winning-zoom');
+            document.getElementById('snd-gong').play().catch(() => {});
+            isFiring = true;
+            document.getElementById('name-ch').style.color = '#ffd700';
+            document.getElementById('name-vn').style.color = '#ffd700';
+            document.getElementById('display-box').classList.add('winning-zoom');
             setTimeout(() => {
-                const [vid, vch] = list[lastIdx].split(',');
-                if (confirm(`🎉 恭喜中獎: ${vch} (${vid})\n是否移除？`)) {
+                const [id, ch] = list[lastIdx].split(',');
+                if (confirm(`🎉 恭喜中獎: ${ch} (${id})\n是否移除？`)) {
                     list.splice(lastIdx, 1);
                     localStorage.setItem('lotteryList', JSON.stringify(list));
-                    cntEl.innerText = list.length;
-                    idEl.innerText = "NEXT"; chEl.innerText = "準備抽獎"; vnEl.innerText = "Sẵn sàng";
-                    chEl.style.color = "white"; 
-                    isFire = false; // 中獎確認後停止噴發
-                    box.classList.remove('winning-zoom');
-                } else {
-                    isFire = false;
-                    box.classList.remove('winning-zoom');
+                    document.getElementById('count').innerText = list.length;
+                    document.getElementById('name-id').innerText = "NEXT";
+                    document.getElementById('name-ch').innerText = "準備抽獎";
+                    document.getElementById('name-ch').style.color = "white";
+                    isFiring = false;
+                    document.getElementById('display-box').classList.remove('winning-zoom');
                 }
             }, 800);
         }
